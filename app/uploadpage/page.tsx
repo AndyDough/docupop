@@ -28,6 +28,7 @@ export default function Uploadpage() {
   ]);
   const [selectedModel, setSelectedModel] = useState("finance");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const models: Model[] = [
     { id: "finance", name: "Finance Model", count: 1 },
@@ -39,8 +40,12 @@ export default function Uploadpage() {
     model.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const onFileChange = (event) => {
+		setSelectedFile(event.target.files[0]);
+	};
   const handleAddDocument = () => {
     // File upload logic would go here
+
     console.log("Add document clicked");
   };
 
@@ -72,7 +77,17 @@ export default function Uploadpage() {
             <p className="text-lg text-gray-700">
               No documents are listed for this customer.
             </p>
-            <div className="flex gap-3">
+            <div className = "flex gap-4">
+            <input
+                className="bg-green-500 hover:bg-green-600"
+                type="file"
+                id="docpicker"
+                accept=".doc,.docx,.xml,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf"
+                onChange={onFileChange}
+              />
+              </div>
+            <div className="flex gap-4">
+              
               <Button
                 onClick={handleAddDocument}
                 className="bg-blue-500 hover:bg-blue-600"
