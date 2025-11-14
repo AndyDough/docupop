@@ -94,13 +94,18 @@ function getStatusColor(status: number) {
   return "bg-gray-300";
 }
 
-const FIELD_COLUMN_WIDTH = "w-[220px] min-w-[220px] max-w-[220px]";
+const fieldCellWidths = [
+  "max-w-[360px]",
+  "max-w-[200px]",
+  "max-w-[200px]",
+  "max-w-[200px]",
+];
 
 export default function Datapage() {
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-50">
       <header className="fixed inset-x-0 top-0 z-10 flex items-center justify-between bg-white px-4 py-3 shadow-sm sm:px-6 lg:px-8">
-        <div className="text-lg font-bold text-gray-900">svg here</div>
+        <div className="text-lg font-bold text-gray-900">Docupop</div>
         <NavMenu />
       </header>
 
@@ -114,18 +119,10 @@ export default function Datapage() {
                   <TableHead className="text-gray-600">OCR Status</TableHead>
                   <TableHead className="text-gray-600">OCR State</TableHead>
                   <TableHead className="text-gray-600">OCR Model</TableHead>
-                  <TableHead className={`text-gray-600 ${FIELD_COLUMN_WIDTH}`}>
-                    Field 1
-                  </TableHead>
-                  <TableHead className={`text-gray-600 ${FIELD_COLUMN_WIDTH}`}>
-                    Field 2
-                  </TableHead>
-                  <TableHead className={`text-gray-600 ${FIELD_COLUMN_WIDTH}`}>
-                    Field 3
-                  </TableHead>
-                  <TableHead className={`text-gray-600 ${FIELD_COLUMN_WIDTH}`}>
-                    Field 4
-                  </TableHead>
+                  <TableHead className="text-gray-600">Field 1</TableHead>
+                  <TableHead className="text-gray-600">Field 2</TableHead>
+                  <TableHead className="text-gray-600">Field 3</TableHead>
+                  <TableHead className="text-gray-600">Field 4</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -163,7 +160,9 @@ export default function Datapage() {
                     {document.fields.map((field, index) => (
                       <TableCell
                         key={`${document.name}-field-${index}`}
-                        className={`text-sm text-gray-500 ${FIELD_COLUMN_WIDTH} truncate`}
+                        className={`text-sm text-gray-500 ${
+                          fieldCellWidths[index] ?? "max-w-[200px]"
+                        } truncate`}
                         title={field}
                       >
                         {field}

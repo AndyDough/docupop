@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
 import NavMenu from "@/components/NavMenu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { FileText, Search } from "lucide-react";
 
 interface UploadFile {
-  name: string;
-  progress: number;
+  id: number;
+  file_name: string;
 }
 
 interface Model {
@@ -21,14 +20,21 @@ interface Model {
 }
 
 export default function Uploadpage() {
-  const [files, setFiles] = useState<UploadFile[]>([
-    { name: "Document.pdf", progress: 100 },
-    { name: "Document2.pdf", progress: 60 },
-    { name: "Document3.pdf", progress: 37 },
-  ]);
+  const [files, setFiles] = useState<UploadFile[]>([]);
   const [selectedModel, setSelectedModel] = useState("finance");
   const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      const res = await fetch("/api/documents");
+      if (res.ok) {
+        const data = await res.json();
+        setFiles(data);
+      }
+    };
+    fetchFiles();
+  }, []);
 
   const models: Model[] = [
     { id: "finance", name: "Finance Model", count: 1 },
@@ -40,11 +46,23 @@ export default function Uploadpage() {
     model.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setFiles((prev) => [{ name: file.name, progress: 0 }, ...prev]);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/documents", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (res.ok) {
+      const newFile = await res.json();
+      setFiles((prev) => [newFile, ...prev]);
+    }
+
     event.target.value = "";
   };
 
@@ -52,26 +70,20 @@ export default function Uploadpage() {
     fileInputRef.current?.click();
   };
 
-  const handleClearQuery = () => {
-    setFiles([]);
-  };
+  const handleClearQuery = async () => {
+    const res = await fetch("/api/documents", {
+      method: "DELETE",
+    });
 
-  const getProgressColor = (progress: number) => {
-    if (progress === 100) return "bg-green-500";
-    if (progress >= 60) return "bg-yellow-400";
-    return "bg-gray-400";
+    if (res.ok) {
+      setFiles([]);
+    }
   };
-
-  const overallProgress = files.length
-    ? Math.round(
-        files.reduce((total, file) => total + file.progress, 0) / files.length,
-      )
-    : 0;
 
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-50">
       <header className="fixed inset-x-0 top-0 z-10 flex items-center justify-between bg-white px-4 py-3 shadow-sm sm:px-6 lg:px-8">
-        <div className="text-lg font-bold text-gray-900">svg here</div>
+        <div className="text-lg font-bold text-gray-900">Docupop</div>
         <NavMenu />
       </header>
 
@@ -85,12 +97,12 @@ export default function Uploadpage() {
             className="hidden"
           />
 
-          {/* Empty State / Upload Area */}
+          {/* Upload Area */}
           <Card className="mb-8 bg-gray-100 p-12">
             <div className="flex flex-col items-center justify-center space-y-6">
               <FileText className="h-16 w-16 text-gray-400" />
               <p className="text-lg text-gray-700">
-                No documents are listed for this customer.
+                Upload documents for this customer.
               </p>
               <div className="flex gap-4">
                 <Button
@@ -110,21 +122,6 @@ export default function Uploadpage() {
             </div>
           </Card>
 
-          {/* Progress Bar */}
-          {files.length > 0 && (
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600">
-                  Uploading Files
-                </span>
-                <span className="text-sm font-medium text-gray-600">
-                  {overallProgress}%
-                </span>
-              </div>
-              <Progress value={overallProgress} className="h-3" />
-            </div>
-          )}
-
           {/* File List */}
           {files.length > 0 && (
             <Card className="mb-8 p-6">
@@ -133,22 +130,14 @@ export default function Uploadpage() {
                   <div className="font-semibold text-gray-700">Name</div>
                   <div className="font-semibold text-gray-700">Status</div>
                 </div>
-                {files.map((file, index) => (
+                {files.map((file) => (
                   <div
-                    key={index}
+                    key={file.id}
                     className="grid grid-cols-2 items-center py-3"
                   >
-                    <div className="text-gray-600">{file.name}</div>
+                    <div className="text-gray-600">{file.file_name}</div>
                     <div className="flex items-center gap-2">
-                      <div className="relative h-6 w-48 overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          className={`h-full transition-all ${getProgressColor(file.progress)}`}
-                          style={{ width: `${file.progress}%` }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
-                          {file.progress}%
-                        </div>
-                      </div>
+                      <Badge variant="secondary">Uploaded</Badge>
                     </div>
                   </div>
                 ))}
