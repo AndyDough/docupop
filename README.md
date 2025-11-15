@@ -37,9 +37,10 @@ To get the project running locally, follow these steps:
     GOOGLE_CLIENT_ID=your_google_client_id
     GOOGLE_CLIENT_SECRET=your_google_client_secret
     DATABASE_URL="postgresql://postgres:postgres@localhost:5432/docupop"
+    GEMINI_API_KEY=your_gemini_api_key
     ```
 
-    You can get the Google credentials from the [Google API Console](https.console.developers.google.com/).
+    You can get the Google credentials from the [Google API Console](https.console.developers.google.com/). You can get a Gemini API key from [Google AI Studio](https://aistudio.google.com/).
 
 4.  **Set up the database table:**
 

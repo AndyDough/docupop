@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import NavMenu from "@/components/NavMenu";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -9,99 +12,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 interface DocumentRecord {
-  name: string;
-  status: number;
-  state: "Completed" | "Manual Review" | "Pending";
-  model: string;
-  fields: string[];
+  id: number;
+  file_name: string;
+  summarized_data: string;
 }
-
-const documents: DocumentRecord[] = [
-  {
-    name: "Document1.pdf",
-    status: 100,
-    state: "Completed",
-    model: "Finance Model",
-    fields: [
-      "Dataaewoifnaweofiawoeifjaweofijaweofijafweo asflkawefi awoifj aoweifjaowiejfaoiwejf aowiefj awoefij awoijj",
-      "Datawefoiawefoiawefoijawefa",
-      "Daawefoiawefoijawefoijawefoijawefoijaweofijafweta",
-      "Dataoiwefjaoweifjaoweifja",
-    ],
-  },
-  {
-    name: "Document2.pdf",
-    status: 85,
-    state: "Manual Review",
-    model: "Finance Model",
-    fields: ["Data", "Data", "Data", "Data"],
-  },
-  {
-    name: "Document3.pdf",
-    status: 76,
-    state: "Pending",
-    model: "Finance Model",
-    fields: ["Data", "Data", "Data", "Data"],
-  },
-  {
-    name: "Document4.pdf",
-    status: 45,
-    state: "Pending",
-    model: "Finance Model",
-    fields: ["Data", "Data", "Data", "Data"],
-  },
-  {
-    name: "Document5.pdf",
-    status: 37,
-    state: "Pending",
-    model: "Finance Model",
-    fields: ["Data", "Data", "Data", "Data"],
-  },
-  {
-    name: "Document6.pdf",
-    status: 60,
-    state: "Pending",
-    model: "Finance Model",
-    fields: ["Data", "Data", "Data", "Data"],
-  },
-  {
-    name: "Document7.pdf",
-    status: 80,
-    state: "Pending",
-    model: "Finance Model",
-    fields: ["Data", "Data", "Data", "Data"],
-  },
-];
-
-const stateStyles: Record<DocumentRecord["state"], string> = {
-  Completed: "bg-green-500 text-white hover:bg-green-500",
-  "Manual Review": "bg-orange-400 text-white hover:bg-orange-400",
-  Pending: "bg-yellow-300 text-gray-800 hover:bg-yellow-300",
-};
-
-const stateBorderStyles: Record<DocumentRecord["state"], string> = {
-  Completed: "border-green-500",
-  "Manual Review": "border-orange-400",
-  Pending: "border-yellow-300",
-};
-
-function getStatusColor(status: number) {
-  if (status >= 90) return "bg-green-500";
-  if (status >= 70) return "bg-lime-400";
-  if (status >= 50) return "bg-yellow-300";
-  return "bg-gray-300";
-}
-
-const fieldCellWidths = [
-  "max-w-[360px]",
-  "max-w-[200px]",
-  "max-w-[200px]",
-  "max-w-[200px]",
-];
 
 export default function Datapage() {
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      const res = await fetch("/api/documents");
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data);
+      }
+    };
+    fetchDocuments();
+  }, []);
+
+  const handleDelete = async (documentId: number) => {
+    const res = await fetch(`/api/documents/${documentId}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+    }
+  };
+
   return (
     <div className="relative flex min-h-screen flex-col bg-gray-50">
       <header className="fixed inset-x-0 top-0 z-10 flex items-center justify-between bg-white px-4 py-3 shadow-sm sm:px-6 lg:px-8">
@@ -116,58 +58,35 @@ export default function Datapage() {
               <TableHeader className="bg-gray-100">
                 <TableRow className="hover:bg-gray-100">
                   <TableHead className="text-gray-600">Document Name</TableHead>
-                  <TableHead className="text-gray-600">OCR Status</TableHead>
-                  <TableHead className="text-gray-600">OCR State</TableHead>
-                  <TableHead className="text-gray-600">OCR Model</TableHead>
-                  <TableHead className="text-gray-600">Field 1</TableHead>
-                  <TableHead className="text-gray-600">Field 2</TableHead>
-                  <TableHead className="text-gray-600">Field 3</TableHead>
-                  <TableHead className="text-gray-600">Field 4</TableHead>
+                  <TableHead className="text-gray-600">Summary</TableHead>
+                  <TableHead className="text-gray-600">Download</TableHead>
+                  <TableHead className="text-gray-600">Delete</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {documents.map((document) => (
                   <TableRow
-                    key={document.name}
+                    key={document.id}
                     className="bg-white hover:bg-transparent"
                   >
                     <TableCell className="text-sm text-gray-700">
-                      {document.name}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-semibold text-gray-600">
-                          {document.status}%
-                        </span>
-                        <div className="relative h-4 w-32 overflow-hidden rounded-full bg-gray-200">
-                          <div
-                            className={`h-full ${getStatusColor(document.status)} transition-all`}
-                            style={{ width: `${document.status}%` }}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`border ${stateBorderStyles[document.state]} ${stateStyles[document.state]}`}
-                      >
-                        {document.state}
-                      </Badge>
+                      {document.file_name}
                     </TableCell>
                     <TableCell className="text-sm text-gray-700">
-                      {document.model}
+                      {document.summarized_data}
                     </TableCell>
-                    {document.fields.map((field, index) => (
-                      <TableCell
-                        key={`${document.name}-field-${index}`}
-                        className={`text-sm text-gray-500 ${
-                          fieldCellWidths[index] ?? "max-w-[200px]"
-                        } truncate`}
-                        title={field}
-                      >
-                        {field}
-                      </TableCell>
-                    ))}
+                    <TableCell>
+                      <Button asChild>
+                        <a href={`/api/documents/${document.id}`} download={document.file_name}>
+                          Download
+                        </a>
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button onClick={() => handleDelete(document.id)} variant="destructive">
+                        Delete
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

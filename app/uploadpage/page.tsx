@@ -6,23 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { FileText, Search } from "lucide-react";
+import { FileText, Search, Loader } from "lucide-react";
 
 interface UploadFile {
   id: number;
   file_name: string;
+  summarized_data?: string;
 }
 
 interface Model {
   id: string;
   name: string;
-  count: number;
 }
 
 export default function Uploadpage() {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [selectedModel, setSelectedModel] = useState("finance");
   const [searchQuery, setSearchQuery] = useState("");
+  const [summarizingFileId, setSummarizingFileId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -37,9 +38,10 @@ export default function Uploadpage() {
   }, []);
 
   const models: Model[] = [
-    { id: "finance", name: "Finance Model", count: 1 },
-    { id: "executive", name: "Executive Model", count: 51 },
-    { id: "medical", name: "Medical Model", count: 1 },
+    { id: "finance", name: "Finance" },
+    { id: "executive", name: "Executive" },
+    { id: "medical", name: "Medical" },
+    { id: "general", name: "General" },
   ];
 
   const filteredModels = models.filter((model) =>
@@ -78,6 +80,37 @@ export default function Uploadpage() {
     if (res.ok) {
       setFiles([]);
     }
+  };
+
+  const handleDelete = async (documentId: number) => {
+    const res = await fetch(`/api/documents/${documentId}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setFiles((prev) => prev.filter((file) => file.id !== documentId));
+    }
+  };
+
+  const handleSummarize = async (documentId: number) => {
+    setSummarizingFileId(documentId);
+    const res = await fetch('/api/summarize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ documentId, model: selectedModel }),
+    });
+
+    if (res.ok) {
+      const summarizedFile = await res.json();
+      setFiles((prev) =>
+        prev.map((file) =>
+          file.id === documentId ? summarizedFile : file
+        )
+      );
+    }
+    setSummarizingFileId(null);
   };
 
   return (
@@ -126,29 +159,40 @@ export default function Uploadpage() {
           {files.length > 0 && (
             <Card className="mb-8 p-6">
               <div className="space-y-1">
-                <div className="mb-4 grid grid-cols-2 border-b pb-2">
-                  <div className="font-semibold text-gray-700">Name</div>
-                  <div className="font-semibold text-gray-700">Status</div>
-                </div>
-                {files.map((file) => (
-                  <div
-                    key={file.id}
-                    className="grid grid-cols-2 items-center py-3"
-                  >
-                    <div className="text-gray-600">{file.file_name}</div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">Uploaded</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                                  <div className="mb-4 grid grid-cols-4 border-b pb-2">
+                                    <div className="font-semibold text-gray-700">Name</div>
+                                    <div className="font-semibold text-gray-700">Status</div>
+                                    <div className="font-semibold text-gray-700 col-span-2">Action</div>
+                                  </div>
+                                  {files.map((file) => (
+                                    <div
+                                      key={file.id}
+                                      className="grid grid-cols-4 items-center py-3"
+                                    >
+                                      <div className="text-gray-600">{file.file_name}</div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant={file.summarized_data ? "default" : "secondary"}>
+                                          {file.summarized_data ? "Summarized" : "Uploaded"}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button onClick={() => handleSummarize(file.id)} disabled={!!file.summarized_data || summarizingFileId === file.id}>
+                                          {summarizingFileId === file.id && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                                          Summarize
+                                        </Button>
+                                        <Button onClick={() => handleDelete(file.id)} variant="destructive">
+                                          Delete
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}              </div>
             </Card>
           )}
 
           {/* Model Selection */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-800">
-              Select which Model to use for OCR
+              Select which Model to use for Summarization
             </h2>
             <Card className="p-6">
               <div className="space-y-3">
@@ -171,16 +215,6 @@ export default function Uploadpage() {
                     >
                       {model.name}
                     </span>
-                    <Badge
-                      variant="secondary"
-                      className={`${
-                        selectedModel === model.id
-                          ? "bg-cyan-500 text-white"
-                          : "bg-gray-200 text-gray-700"
-                      }`}
-                    >
-                      {model.count}
-                    </Badge>
                   </div>
                 ))}
                 <div className="relative">
@@ -195,12 +229,6 @@ export default function Uploadpage() {
                 </div>
               </div>
             </Card>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
-              <Button variant="outline">Cancel</Button>
-              <Button className="bg-green-500 hover:bg-green-600">OCR</Button>
-            </div>
           </div>
         </div>
       </div>
