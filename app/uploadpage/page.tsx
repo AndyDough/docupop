@@ -23,7 +23,9 @@ export default function Uploadpage() {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [selectedModel, setSelectedModel] = useState("finance");
   const [searchQuery, setSearchQuery] = useState("");
-  const [summarizingFileId, setSummarizingFileId] = useState<number | null>(null);
+  const [summarizingFileId, setSummarizingFileId] = useState<number | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -94,10 +96,10 @@ export default function Uploadpage() {
 
   const handleSummarize = async (documentId: number) => {
     setSummarizingFileId(documentId);
-    const res = await fetch('/api/summarize', {
-      method: 'POST',
+    const res = await fetch("/api/summarize", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ documentId, model: selectedModel }),
     });
@@ -105,9 +107,7 @@ export default function Uploadpage() {
     if (res.ok) {
       const summarizedFile = await res.json();
       setFiles((prev) =>
-        prev.map((file) =>
-          file.id === documentId ? summarizedFile : file
-        )
+        prev.map((file) => (file.id === documentId ? summarizedFile : file)),
       );
     }
     setSummarizingFileId(null);
@@ -159,33 +159,46 @@ export default function Uploadpage() {
           {files.length > 0 && (
             <Card className="mb-8 p-6">
               <div className="space-y-1">
-                                  <div className="mb-4 grid grid-cols-4 border-b pb-2">
-                                    <div className="font-semibold text-gray-700">Name</div>
-                                    <div className="font-semibold text-gray-700">Status</div>
-                                    <div className="font-semibold text-gray-700 col-span-2">Action</div>
-                                  </div>
-                                  {files.map((file) => (
-                                    <div
-                                      key={file.id}
-                                      className="grid grid-cols-4 items-center py-3"
-                                    >
-                                      <div className="text-gray-600">{file.file_name}</div>
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant={file.summarized_data ? "default" : "secondary"}>
-                                          {file.summarized_data ? "Summarized" : "Uploaded"}
-                                        </Badge>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <Button onClick={() => handleSummarize(file.id)} disabled={!!file.summarized_data || summarizingFileId === file.id}>
-                                          {summarizingFileId === file.id && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-                                          Summarize
-                                        </Button>
-                                        <Button onClick={() => handleDelete(file.id)} variant="destructive">
-                                          Delete
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}              </div>
+                <div className="mb-4 grid grid-cols-4 border-b pb-2">
+                  <div className="font-semibold text-gray-700">Name</div>
+                  <div className="font-semibold text-gray-700">Status</div>
+                </div>
+                {files.map((file) => (
+                  <div
+                    key={file.id}
+                    className="grid grid-cols-4 items-center py-3"
+                  >
+                    <div className="text-gray-600">{file.file_name}</div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={file.summarized_data ? "default" : "secondary"}
+                      >
+                        {file.summarized_data ? "Summarized" : "Uploaded"}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleSummarize(file.id)}
+                        disabled={
+                          !!file.summarized_data ||
+                          summarizingFileId === file.id
+                        }
+                      >
+                        {summarizingFileId === file.id && (
+                          <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Summarize
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(file.id)}
+                        variant="destructive"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}{" "}
+              </div>
             </Card>
           )}
 

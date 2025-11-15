@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 
 const navLinks = [
   { href: "/uploadpage", label: "Upload" },
-  { href: "/modelpage", label: "Model" },
   { href: "/reviewpage", label: "Review" },
   { href: "/datapage", label: "Data" },
 ];

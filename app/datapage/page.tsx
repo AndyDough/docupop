@@ -58,8 +58,9 @@ export default function Datapage() {
               <TableHeader className="bg-gray-100">
                 <TableRow className="hover:bg-gray-100">
                   <TableHead className="text-gray-600">Document Name</TableHead>
-                  <TableHead className="text-gray-600">Summary</TableHead>
-                  <TableHead className="text-gray-600">Download</TableHead>
+                  <TableHead className="text-gray-600">Summary Status</TableHead>
+                  <TableHead className="text-gray-600">Summary Actions</TableHead>
+                  <TableHead className="text-gray-600">Download Original</TableHead>
                   <TableHead className="text-gray-600">Delete</TableHead>
                 </TableRow>
               </TableHeader>
@@ -72,13 +73,27 @@ export default function Datapage() {
                     <TableCell className="text-sm text-gray-700">
                       {document.file_name}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-700">
-                      {document.summarized_data}
+                    <TableCell>
+                      <Badge variant={document.summarized_data ? "default" : "secondary"}>
+                        {document.summarized_data ? "Summarized" : "Pending"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {document.summarized_data && (
+                        <Button asChild>
+                          <a
+                            href={`/api/summaries/${document.id}`}
+                            download={`${document.file_name}-summary.txt`}
+                          >
+                            Download Summary
+                          </a>
+                        </Button>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Button asChild>
                         <a href={`/api/documents/${document.id}`} download={document.file_name}>
-                          Download
+                          Download Original
                         </a>
                       </Button>
                     </TableCell>

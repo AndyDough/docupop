@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import NavMenu from "@/components/NavMenu";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import ReactMarkdown from "react-markdown";
+import "github-markdown-css/github-markdown-light.css";
 
 interface DocumentRecord {
   id: number;
@@ -13,7 +14,8 @@ interface DocumentRecord {
 
 export default function Reviewpage() {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
-  const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null);
+  const [selectedDocument, setSelectedDocument] =
+    useState<DocumentRecord | null>(null);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -35,7 +37,9 @@ export default function Reviewpage() {
 
       <main className="mx-auto flex w-full max-w-7xl flex-1 px-4 pt-24 pb-12 sm:px-6 lg:px-8">
         <div className="w-1/3 pr-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Documents</h2>
+          <h2 className="mb-4 text-lg font-semibold text-gray-800">
+            Documents
+          </h2>
           <Card className="overflow-hidden border bg-white shadow-sm">
             <ul>
               {documents.map((doc) => (
@@ -53,12 +57,16 @@ export default function Reviewpage() {
           </Card>
         </div>
         <div className="w-2/3">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Summary</h2>
-          <Card className="overflow-hidden border bg-white shadow-sm p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-800">Summary</h2>
+          <Card className="overflow-hidden border bg-white p-6 shadow-sm">
             {selectedDocument ? (
-              <div>
-                <h3 className="font-semibold text-lg mb-2">{selectedDocument.file_name}</h3>
-                <p>{selectedDocument.summarized_data}</p>
+              <div className="markdown-body">
+                <h3 className="mb-2 text-lg font-semibold">
+                  {selectedDocument.file_name}
+                </h3>
+                <ReactMarkdown>
+                  {selectedDocument.summarized_data}
+                </ReactMarkdown>
               </div>
             ) : (
               <p>Select a document to see the summary.</p>
