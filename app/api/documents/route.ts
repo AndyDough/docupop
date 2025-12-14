@@ -1,90 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getSessionUserId } from '@/server/auth/session';
+import { listDocuments, saveDocument } from '@/server/data-store';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+  const userId = await getSessionUserId();
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  try {
-    const client = await pool.connect();
-    const userResult = await client.query('SELECT id FROM users WHERE email = $1', [session.user.email]);
-    if (userResult.rows.length === 0) {
-      client.release();
-      return NextResponse.json([]);
-    }
-    const userId = userResult.rows[0].id;
-    const result = await client.query(
-      'SELECT * FROM documents WHERE user_id = $1',
-      [userId]
-    );
-    client.release();
-    return NextResponse.json(result.rows);
-  } catch {
-    return NextResponse.json({ error: 'Error fetching documents' }, { status: 500 });
-  }
+  const documents = await listDocuments(userId);
+  return NextResponse.json({ documents });
 }
 
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+export async function POST(request: NextRequest) {
+  const userId = await getSessionUserId();
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const formData = await req.formData();
-  const file = formData.get('file') as File;
+  const formData = await request.formData();
+  const file = formData.get('file');
 
-  if (!file) {
-    return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: 'File is required' }, { status: 400 });
   }
 
-  const fileBuffer = await file.arrayBuffer();
-  const fileContent = Buffer.from(fileBuffer);
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
-  try {
-    const client = await pool.connect();
-    const userResult = await client.query('SELECT id FROM users WHERE email = $1', [session.user.email]);
-    let userId;
-    if (userResult.rows.length === 0) {
-      const newUserResult = await client.query('INSERT INTO users (email) VALUES ($1) RETURNING id', [session.user.email]);
-      userId = newUserResult.rows[0].id;
-    } else {
-      userId = userResult.rows[0].id;
-    }
-
-    const result = await client.query(
-      'INSERT INTO documents (user_id, file_name, file_content) VALUES ($1, $2, $3) RETURNING *',
-      [userId, file.name, fileContent]
-    );
-    client.release();
-    return NextResponse.json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Error creating document' }, { status: 500 });
+  if (!file.name) {
+    return NextResponse.json({ error: 'Filename is missing' }, { status: 400 });
   }
+
+  if (buffer.byteLength === 0) {
+    return NextResponse.json({ error: 'File is empty' }, { status: 400 });
+  }
+
+  if (buffer.byteLength > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'File exceeds 10MB limit' }, { status: 400 });
+  }
+
+  const document = await saveDocument({
+    userId,
+    filename: file.name,
+    buffer,
+    contentType: file.type || 'application/octet-stream',
+    size: buffer.byteLength,
+  });
+
+  return NextResponse.json({ document });
 }
 
-export async function DELETE() {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    try {
-        const client = await pool.connect();
-        const userResult = await client.query('SELECT id FROM users WHERE email = $1', [session.user.email]);
-        if (userResult.rows.length === 0) {
-            client.release();
-            return NextResponse.json({ message: 'User not found' }, { status: 404 });
-        }
-        const userId = userResult.rows[0].id;
-        await client.query('DELETE FROM documents WHERE user_id = $1', [userId]);
-        client.release();
-        return NextResponse.json({ message: 'Documents deleted' });
-    } catch {
-        return NextResponse.json({ error: 'Error deleting documents' }, { status: 500 });
-    }
-}
